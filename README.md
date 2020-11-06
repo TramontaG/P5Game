@@ -1,6 +1,6 @@
 # P5Game
 
-Instruções:
+Instruções: \n
 -Tenha instalado Node.js na sua maquina (recomendavel versão 10.x)
 -Abra um terminal powershell na pasta do projeto
 -Digite o comando "npm install -g parcel-bundler"
