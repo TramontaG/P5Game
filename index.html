@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>P5Game</title>
+	<script defer src="./src/p5Game.js"></script>
+</head>
+<body>
+	<script>
+		import('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js');
+				
+		let Game;
+
+		function setup(){
+			createCanvas(windowWidth, windowHeight);
+			Game.setup();
+
+			mouseClicked = Game.onClick
+			mouseDragged = Game.mouseDragged;
+			mouseReleased = Game.mouseReleased;
+			mousePressed = Game.mousePressed;
+		}
+
+		function draw(){
+			Game.render();
+		}
+
+	</script>
+
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</body>
+</html>

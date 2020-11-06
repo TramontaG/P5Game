@@ -1,0 +1,39 @@
+Date : 2020-11-05 22:03:25
+Directory : d:\Projetos\P5Game\src
+Total : 11 files,  436 codes, 10 comments, 91 blanks, all 537 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| JavaScript |         11 |        436 |         10 |         91 |        537 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                 | files      | code       | comment    | blank      | total      |
++------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                    |         11 |        436 |         10 |         91 |        537 |
+| gameObjects                                          |          4 |        243 |          6 |         57 |        306 |
+| helpers                                              |          1 |         14 |          0 |          2 |         16 |
+| scenes                                               |          4 |         91 |          0 |         12 |        103 |
+| util                                                 |          1 |         14 |          0 |          0 |         14 |
++------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                             | language   | code       | comment    | blank      | total      |
++------------------------------------------------------+------------+------------+------------+------------+------------+
+| d:\Projetos\P5Game\src\gameObjects\gameObject.js     | JavaScript |        189 |          6 |         41 |        236 |
+| d:\Projetos\P5Game\src\gameObjects\gameObjectList.js | JavaScript |          2 |          0 |          2 |          4 |
+| d:\Projetos\P5Game\src\gameObjects\square.js         | JavaScript |         24 |          0 |          6 |         30 |
+| d:\Projetos\P5Game\src\gameObjects\squareChildren.js | JavaScript |         28 |          0 |          8 |         36 |
+| d:\Projetos\P5Game\src\helpers\colorHelper.js        | JavaScript |         14 |          0 |          2 |         16 |
+| d:\Projetos\P5Game\src\p5Game.js                     | JavaScript |         74 |          4 |         20 |         98 |
+| d:\Projetos\P5Game\src\scenes\Scene.js               | JavaScript |         38 |          0 |          6 |         44 |
+| d:\Projetos\P5Game\src\scenes\scenesList.js          | JavaScript |          7 |          0 |          2 |          9 |
+| d:\Projetos\P5Game\src\scenes\testScene.js           | JavaScript |         28 |          0 |          1 |         29 |
+| d:\Projetos\P5Game\src\scenes\testScene2.js          | JavaScript |         18 |          0 |          3 |         21 |
+| d:\Projetos\P5Game\src\util\IDGenerator.js           | JavaScript |         14 |          0 |          0 |         14 |
+| Total                                                |            |        436 |         10 |         91 |        537 |
++------------------------------------------------------+------------+------------+------------+------------+------------+

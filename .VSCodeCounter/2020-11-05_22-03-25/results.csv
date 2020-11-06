@@ -1,0 +1,13 @@
+"filename", "language", "JavaScript", "comment", "blank", "total"
+"d:\Projetos\P5Game\src\gameObjects\gameObject.js", "JavaScript", 189, 6, 41, 236
+"d:\Projetos\P5Game\src\gameObjects\gameObjectList.js", "JavaScript", 2, 0, 2, 4
+"d:\Projetos\P5Game\src\gameObjects\square.js", "JavaScript", 24, 0, 6, 30
+"d:\Projetos\P5Game\src\gameObjects\squareChildren.js", "JavaScript", 28, 0, 8, 36
+"d:\Projetos\P5Game\src\helpers\colorHelper.js", "JavaScript", 14, 0, 2, 16
+"d:\Projetos\P5Game\src\p5Game.js", "JavaScript", 74, 4, 20, 98
+"d:\Projetos\P5Game\src\scenes\Scene.js", "JavaScript", 38, 0, 6, 44
+"d:\Projetos\P5Game\src\scenes\scenesList.js", "JavaScript", 7, 0, 2, 9
+"d:\Projetos\P5Game\src\scenes\testScene.js", "JavaScript", 28, 0, 1, 29
+"d:\Projetos\P5Game\src\scenes\testScene2.js", "JavaScript", 18, 0, 3, 21
+"d:\Projetos\P5Game\src\util\IDGenerator.js", "JavaScript", 14, 0, 0, 14
+"Total", "-", 436, 10, 91, 537
