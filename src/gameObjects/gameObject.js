@@ -1,167 +1,212 @@
+import Hitbox from './../parts/hitbox';
+import CollisionHandler from './../util/ColisionHandler';
+import { drawArrow } from './../util/Shapes';
+
 export default class GameObject {
 	constructor(options = {}) {
-		this.position = options.position || { x: 0, y: 0 };
-		this.velocity = options.velocity || { x: 0, y: 0 };
-		this.nextVelocity = this.velocity;
-		this.width = options.width || options.size || 0;
-		this.height = options.height || options.size || 0;
-		this.size = this.width + this.height / 2;
-		this.mass = options.mass || 1;
-
-		this.accel = options.accel || { x: 0, y: 0 };		
+		//identification related properties
 		this.tag = options.tag || null;
-		this.privateId = Game.utils.IdGenerator.getUniqueID(15);
-		this.id = options.id || this.privateId;
+		this._privateId = Game.utils.IdGenerator.getUniqueID(10);
+		this.publicId = options.publicId || null;
 
+		//measure related properties
+		this.width = options.width || 1;
+		this.height = options.height || 1;
+
+		//movement related properties
+		this.position = options.position || new p5.Vector(0,0);
+		this._lastPos = this.position;
+		this.velocity = options.velocity || new p5.Vector(0,0);
+		this.accel = options.accel || new p5.Vector(0,0);
+		this.mass = options.mass || 1;
+		this.gravity = options.gravity ? new p5.vector(0, (options.gravity * 0.1)) : new p5.Vector(0, 0.1);
+		this.canvasFriction = options.canvasFriction || 0;
+		this.bounceCoeficient = options.bounceCoeficient || 0;
+		this.airDrag = options.airDrag || 0;
+
+		//environment interaction related properties
 		this.canDrag = options.canDrag || false;
 		this.canBounceCanvas = options.canBounceCanvas || false;
-		this.bounceCoeficient = options.bounceCoeficient || 0;
-		this.dragging = false;
 		this.hasGravity = options.hasGravity || false;
-		this.gravity = options.gravity || 1;
-		if (this.hasGravity) this.accel.y = this.gravity * 0.1;
-		this.canvasFriction = options.canvasFriction || 0;
-		this.airDrag = options.airDrag || 0;
-		this.lastPos = this.position;
 		this.canThrow = options.canThrow || false;
+		this.hasRigidBody = options.hasRigidBody || false;
+
+		this._dragging = false;
 
 		this.hide = options.hide || false;
 		this.active = options.active || true;
 
-		this.hasRigidBody = options.hasRigidBody || false;
-		this.hitboxes = options.hitboxes || [{
-			xOffset: 0,
-			yOffset: 0,
-			width: this.width,
-			height: this.height,
-			tag: null,
-		}];
+		this.hitboxes = options.hitboxes || [
+			new Hitbox.Square({
+				xOffset: 0,
+				yOffset: 0,
+				width: this.width,
+				height: this.height,
+				tag: null,
+			})
+		];
 
+		//event handlers
+		this.messageHandler = {};
 		this.collisionHandler = {};
+		this.keyHandler = {};
+
+		this.children = [];
 
 		this.debug = options.debug || {
 			hitboxes: false,
 			position: false,
 		};
-
-		this.children = [];
-		this.messageHandler = {};	
 	}
 
-	protoPreLoad(){
+	_protoPreLoad() {
 		this.preLoad();
 	}
 
-	preLoad() {}
+	preLoad() { }
 
-	compute() {
+	_compute() {
 		if (!this.active) return;
-		this.checkCollision();
-		this.checkCanvasCollision();
-		this.update();
-
-		this.lastPos = this.position;
-
-		if (!this.hide){
-			this.render();
-			if (this.debug.hitboxes) this.renderHitboxes();
-			if (this.debug.position) this.renderPosition();
+		if (!this.hide)this.render();
+		this._lastPos = this.position.copy();
+		if (!this._dragging) {
+			this.checkCollision();
+			if (this.hasGravity) this.applyForce(p5.Vector.mult(this.gravity, this.mass));
+			if (this.canBounceCanvas) this._checkCanvasCollision();
 		}
+		if (this.debug.hitboxes) this.renderHitboxes();
+		if (this.debug.position) this.renderPosition();
+		if (this.debug.vectors) this.renderVectors();
 
-		for (let child of this.children){
-			child.run();
+		for (let child of this.children) {
+			child.compute();
 		}
-
 	}
 
+	//rendering routines
 	render() { }
 
-	
 	renderHitboxes() {
-		for (let hitbox of this.hitboxes){
+		for (let hitbox of this.hitboxes) {
 			fill('rgba(255,0,255,.5)');
-			rect(this.position.x + hitbox.xOffset, this.position.y + hitbox.yOffset, hitbox.width, hitbox.height);
+			if (hitbox instanceof Hitbox.Square) rect  (this.position.x + hitbox.xOffset, this.position.y + hitbox.yOffset, hitbox.width, hitbox.height);
+			if (hitbox instanceof Hitbox.Circle) circle(this.position.x + hitbox.xOffset, this.position.y + hitbox.yOffset, hitbox.radius * 2);
 		}
 	}
-	
-	renderPosition(){
+
+	renderPosition() {
 		stroke(0);
 		circle(this.position.x, this.position.y, 5);
 	}
 
+	renderVectors() {
+		if (this.velocity.mag() > 0.1) 	drawArrow(this.position, this.velocity, 'red', 7);
+		if (this.accel.mag() > 0.01)	drawArrow(this.position, this.accel, 'green', 280);
+	}
+
+	renderChildren() {
+		Object.values(this.children).map(children => children.render());
+	}
+
+	update() { }
+
+	//movement routines
+	applyForce(vector){
+		this.accel.add(p5.Vector.div(vector, this.mass));
+		if (this.debug.vectors) drawArrow(this.position, vector, 'blue', 70);
+	}
+
 	checkCollision() {
-		for (let target of Object.values(Game.currentScene.gameObjects)){
-			for (let selfHitbox of this.hitboxes){
-				for (let targetHitbox of target.hitboxes){
-					if (target.privateId != this.privateId) {
-						const selfRightMargin 	= this.position.x + selfHitbox.xOffset + selfHitbox.width / 2;
-						const selfLeftMargin 	= this.position.x - selfHitbox.xOffset - selfHitbox.width / 2;
-						const selfBottomMargin 	= this.position.y + selfHitbox.yOffset + selfHitbox.height / 2;
-						const selfTopMargin 	= this.position.y - selfHitbox.yOffset - selfHitbox.height / 2;
-
-						const targetRightMargin 	= target.position.x + targetHitbox.xOffset + targetHitbox.width / 2;
-						const targetLeftMargin 		= target.position.x - targetHitbox.xOffset - targetHitbox.width / 2;
-						const targetBottomMargin 	= target.position.y + targetHitbox.yOffset + targetHitbox.height / 2;
-						const targetTopMargin 		= target.position.y - targetHitbox.yOffset - targetHitbox.height / 2;
-
-						const horizontalOverlapping = selfRightMargin >= targetLeftMargin && targetRightMargin >= selfLeftMargin; 
-						const verticalOverlapping	= selfBottomMargin >= targetTopMargin && targetBottomMargin >= selfTopMargin; 
-
-						if(horizontalOverlapping && verticalOverlapping){
-							const collisionTan = (target.position.y - this.position.y) * -1 / (target.position.x - this.position.x);
-							let collisionAngle = atan(collisionTan) * 180 / Math.PI;
-							if (this.position.x < target.position.x) collisionAngle += 180;
-							if (this.position.x > target.position.x && this.position.y > target.position.y) collisionAngle += 360;
-
-							const verticalCollision = Math.floor((collisionAngle - 45) / 90) % 2 == 0;
-
-							if (verticalCollision && this.position.y < target.position.y) 	this.position.y = targetTopMargin - selfHitbox.height / 2 - selfHitbox.yOffset; 
-							if (verticalCollision && this.position.y > target.position.y) 	this.position.y = targetBottomMargin + selfHitbox.height / 2 + selfHitbox.yOffset; 
-							if (!verticalCollision && this.position.x > target.position.x) 	this.position.x = targetRightMargin + selfHitbox.width / 2 + selfHitbox.xOffset; 
-							if (!verticalCollision && this.position.x < target.position.x) 	this.position.x = targetLeftMargin - selfHitbox.width / 2 - selfHitbox.xOffset; 
-
-
-							if (this.collisionHandler.hasOwnProperty('all')) 		this.collisionHandler.all(collisionAngle);
-							if (this.collisionHandler.hasOwnProperty(target.tag))	this.collisionHandler[target.tag](collisionAngle);
-							if (this.hasRigidBody && target.hasRigidBody) 			this.bounceAround(verticalCollision, target);
-						}
-					}
-				}
+		//template for getting hitboxes margins
+		for (let scene of Game.loadedScenes) {
+			for (let target of Object.values(scene.gameObjects)) {
+				if (this._privateId != target._privateId) CollisionHandler.checkCollision(this, target);
 			}
 		}
 	}
 
-	move() {
-		if (this.dragging) return;
+	_move() {
+		if (this._dragging) return;
+		this.velocity.add(this.accel);
+		this.position.add(this.velocity);
+		this.accel = new p5.Vector(0,0);
+		if (Math.abs(this.velocity.x) < 0.1) this.velocity.x = 0;
+		if (Math.abs(this.velocity.y) < 0.1) this.velocity.y = 0;
+	}
 
-		this.velocity = this.nextVelocity;
+	_checkCanvasCollision() {
+		//object is to the left of canvas
+		if (this.position.x - this.width / 2 <= 0) this._collideWithCanvas({ 
+			edge: 'left', 
+			isSliding: Math.abs(this.velocity.x) < 1.2, 
+		})
 
-		if (this.position.y < windowHeight && this.hasGravity) this.accel.y = this.gravity * 0.1;
+		//object is to the right of canvas
+		else if (this.position.x + this.width / 2 >= windowWidth) this._collideWithCanvas({
+			edge: 'right',
+			isSliding: Math.abs(this.velocity.x) < 1.2,
+		})
 
-		this.position.x += this.velocity.x;
-		this.position.y += this.velocity.y;
+		//object is above canvas
+		if (this.position.y - this.height / 2 <= 0) this._collideWithCanvas({
+			edge: 'top',
+			isSliding: Math.abs(this.velocity.y) < 1.2,
+		})
 
-		this.nextVelocity.x += this.accel.x;
-		this.nextVelocity.y += this.accel.y;
+		//object is below canvas
+		else if (this.position.y + this.height / 2 >= windowHeight) this._collideWithCanvas({
+			edge: 'bottom',
+			isSliding: Math.abs(this.velocity.y) < 1.2,
+		})
+	}
 
-		if (this.airDrag) {
-			this.nextVelocity.x -= this.airDrag * 0.1 * Math.sign(this.velocity.x);
-			this.nextVelocity.y -= this.airDrag * 0.1 * Math.sign(this.velocity.y);
+	_collideWithCanvas = info => {
+		const friction = {
+			top: 	new p5.Vector(Math.sign(this.velocity.x) * this.canvasFriction * -1, 0),
+			bottom: new p5.Vector(Math.sign(this.velocity.x) * this.canvasFriction * -1, 0),
+			left: 	new p5.Vector(0, Math.sign(this.velocity.y) * this.canvasFriction * -1),
+			right: 	new p5.Vector(0, Math.sign(this.velocity.y) * this.canvasFriction * -1),
+		}
+		const bounce = {
+			top: 	new p5.Vector(this.velocity.x, Math.abs(this.velocity.y) * this.bounceCoeficient),
+			bottom: new p5.Vector(this.velocity.x, Math.abs(this.velocity.y) * -1 * this.bounceCoeficient),
+			left: 	new p5.Vector(Math.abs(this.velocity.x) * this.bounceCoeficient, this.velocity.y),
+			right: 	new p5.Vector(Math.abs(this.velocity.x) * -1 * this.bounceCoeficient, this.velocity.y),
+		}
+		const snap = {
+			top: 	() => this.position.y = this.height / 2,
+			bottom: () => this.position.y = windowHeight - this.height / 2,
+			left: 	() => this.position.x = this.width / 2,
+			right: 	() => this.position.x = windowWidth - this.width / 2
+		}
+		
+		const stopBounce = {
+			vertical: () => this.velocity.y = 0,
+			horizontal: () => this.velocity.x = 0,
+		}
+
+		if (this.canBounceCanvas) {
+			snap[info.edge]();
+			if (this.canvasFriction > 0 && this.velocity.mag() > 0) {
+				this.applyForce(friction[info.edge]);
+			}
+			this.velocity = bounce[info.edge];
+			//this is just to counter the fact that the gravity is applied on the frame that the object is on the canvas floor
+			//causing it to clip inside the canvas and lose a net height over time, even if the bounce coeficient is 1;
+			if (info.edge == 'bottom') this.applyForce(p5.Vector.mult(this.gravity, this.mass).mult(-1));
+
+
+			if (this.collisionHandler.hasOwnProperty('any') 	&& !info.isSliding) this.collisionHandler.any();
+			if (this.collisionHandler.hasOwnProperty('canvas') 	&& !info.isSliding) this.collisionHandler.canvas(info.edge);
+
+			if (Math.abs(this.velocity.x) < 0.1) stopBounce.horizontal();
+			if (Math.abs(this.velocity.y) < 0.75) stopBounce.vertical();
+			this.onBouncedCanvas(info.edge);
 		}
 	}
 
-	bounceAround(verticalCollision, target) {
-		const firstFactor 	= (this.mass - target.mass) / (this.mass + target.mass);
-		const secondFactor 	= (2 * target.mass) / (this.mass + target.mass);
-
-		const xNewVelocity = firstFactor * this.velocity.x + secondFactor * target.velocity.x;
-		const yNewVelocity = firstFactor * this.velocity.y * - 1 + secondFactor * target.velocity.y * -1;
-
-		if (verticalCollision) 	this.nextVelocity.y = yNewVelocity * this.bounceCoeficient;
-		else 					this.nextVelocity.x = xNewVelocity * this.bounceCoeficient;
-	}
-
-	update() { }
+	//event routines
+	onBouncedCanvas() {	}
 
 	protoOnClick() {
 		if (this.dragging) {
@@ -179,128 +224,45 @@ export default class GameObject {
 	onClickOusideMe() { }
 
 	protoMouseDragged() {
-		if (this.canDrag && this.mouseIsOver()) {
-			this.dragging = true;
-			this.position = {
-				x: mouseX,
-				y: mouseY,
-			}
+		if ((this.canDrag && this.mouseIsOver())|| this._dragging) {
+			if (this.mouseIsOver()) this._dragging = true;
+			this.position = new p5.Vector(mouseX, mouseY);
+			this.accel = new p5.Vector(0,0);
 
 			//making sure you can't drag the object outside the screen
-			if (this.position.y + this.height / 2 > windowHeight) 	this.position.y = windowHeight - this.height / 2
-			if (this.position.y - this.height / 2 < 0) 				this.position.y = 0 + this.height / 2
-			if (this.position.x + this.width / 2 > windowWidth) 	this.position.x = windowWidth - this.width / 2
-			if (this.position.x - this.width / 2 < 0) 				this.position.x = 0 + this.width / 2
+			if (this.position.y + this.height / 2 > windowHeight) this.position.y = windowHeight - this.height / 2
+			if (this.position.y - this.height / 2 < 0) this.position.y = 0 + this.height / 2
+			if (this.position.x + this.width / 2 > windowWidth) this.position.x = windowWidth - this.width / 2
+			if (this.position.x - this.width / 2 < 0) this.position.x = 0 + this.width / 2
 		}
 		else this.onMouseDragged();
 	}
+
 	onMouseDragged() { };
 
 	protoMousePressed() {
 		if (this.canThrow && this.canDrag && this.mouseIsOver()) {
-			this.accel = { x: 0, y: 0};
-			this.velocity = {x: 0, y: 0};
-			this.dragging = true;
+			this.accel = new p5.Vector(0,0);
+			this.velocity = new p5.Vector(0,0);
+			this._dragging = true;
 		}
 		this.onMousePressed();
 	}
 	onMousePressed() { }
 
 	protoMouseReleased() {
-		if (this.canThrow && this.canDrag && this.mouseIsOver()) {
-			this.accel = { x: 0, y: this.hasGravity ? this.gravity * 0.1 : 0 };
-			this.nextVelocity.x = (this.position.x - this.lastPos.x) * 2;
-			this.nextVelocity.y = (this.position.y - this.lastPos.y) * 2;
-			this.dragging = false;
+		if (this._dragging) {
+			this.velocity = p5.Vector.sub(this.position, this._lastPos).mult(2).copy();
+			this._dragging = false;
 		}
 		this.onMouseReleased();
 	}
-	onMouseReleased() {}
+	onMouseReleased() { }
 
 	mouseIsOver() {
 		return (
 			mouseX >= this.position.x - (this.width / 2) && mouseX <= this.position.x + (this.width / 2) &&
 			mouseY >= this.position.y - (this.height / 2) && mouseY <= this.position.y + (this.height / 2)
 		);
-	}
-
-	checkCanvasCollision() {
-		if (this.position.x - this.width / 2 <= 0) {
-			//object is to the left of canvas
-			this.touchingCanvas({
-				edge: 'left',
-				isSliding: Math.abs(this.velocity.x) < 1.2,
-			})
-		}
-
-		else if (this.position.x + this.width / 2 >= windowWidth) {
-			//object is to the right of canvas
-			this.touchingCanvas({
-				edge: 'right',
-				isSliding: Math.abs(this.velocity.x) < 1.2,
-			})
-		}
-
-		if (this.position.y - this.height / 2 <= 0) {
-			//object is above canvas
-			this.touchingCanvas({
-				edge: 'top',
-				isSliding: Math.abs(this.velocity.y) < 1.2,
-			})
-
-		}
-
-		else if (this.position.y + this.height / 2 >= windowHeight) {
-			//object is below canvas
-			this.touchingCanvas({
-				edge: 'bottom',
-				isSliding: Math.abs(this.velocity.y) < 1.2,
-			})
-		}
-	}
-
-	touchingCanvas = info =>{
-		const friction = {
-			top: 	() => this.velocity.x -= (1 / this.canvasFriction) * 0.1 * Math.sign(this.velocity.x),
-			bottom: () => this.velocity.x -= (1 / this.canvasFriction) * 0.1 * Math.sign(this.velocity.x),
-			left:	() => this.velocity.y -= (1 / this.canvasFriction) * 0.1 * Math.sign(this.velocity.y),
-			right:	() => this.velocity.y -= (1 / this.canvasFriction) * 0.1 * Math.sign(this.velocity.y),		
-		}
-		const bounce = {
-			top:	() => this.velocity.y = this.bounceCoeficient * Math.abs(this.velocity.y),
-			bottom:	() => this.velocity.y = this.bounceCoeficient * Math.abs(this.velocity.y) * -1,
-			left: 	() => this.velocity.x = this.bounceCoeficient * Math.abs(this.velocity.x),
-			right: 	() => this.velocity.x = this.bounceCoeficient * Math.abs(this.velocity.x) * -1,
-		}
-		const snap = {
-			top:	() => this.position.y = this.height / 2,
-			bottom:	() => this.position.y = windowHeight - this.height / 2,
-			left: 	() => this.position.x = this.width / 2,
-			right: 	() => this.position.x = windowWidth - this.width / 2
-		}
-		const stopBounce = {
-			vertical:	() => this.velocity.y = 0,
-			horizontal: () => this.velocity.x = 0,
-		}
-
-		if(info.isSliding && this.canvasFriction != 0) {
-			friction[info.edge]();
-		}
-
-		if(this.canBounceCanvas) {
-			snap[info.edge]();
-			bounce[info.edge]();
-			if (Math.abs(this.velocity.x) < 0.1 && this.position.x + this.height / 2 > 0) stopBounce.horizontal();
-			if (Math.abs(this.velocity.y) < 0.75) stopBounce.vertical();
-			this.onBouncedCanvas(info.edge);
-		}
-	}
-
-	onBouncedCanvas(edge) { 
-
-	}
-
-	renderChildren() {
-		Object.values(this.children).map(children => children.render());
 	}
 }

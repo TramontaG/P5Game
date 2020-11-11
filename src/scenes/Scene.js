@@ -8,16 +8,16 @@ export default class Scene {
 	render(){
 		background(this.backgroundColor || 0);
 		Object.values(this.gameObjects).map(gameObject => {
-			gameObject.compute();
+			gameObject._compute();
 		});
 		Object.values(this.gameObjects).map(gameObject => {
-			gameObject.move();
+			gameObject._move();
 		});
 	};
 
 	protoPreLoad(){
 		Object.values(this.gameObjects).map(gameObject => {
-			gameObject.protoPreLoad();
+			gameObject._protoPreLoad();
 		});
 	}
 

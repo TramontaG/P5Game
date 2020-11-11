@@ -1,5 +1,6 @@
 import gameScenes from "./scenes/scenesList";
 import IdGenerator from './util/IDGenerator';
+import Measures from './util/Measures';
 
 const debug = 2;
 
@@ -7,10 +8,10 @@ class P5Game {
   setup() {
     this.loadedScenes = [];
     this.currentScene = this.loadedScenes[0];
-    
 
     this.utils = {
       IdGenerator: IdGenerator,
+      Measures: Measures,
     }
 
     this.pushScene('scene1'); 

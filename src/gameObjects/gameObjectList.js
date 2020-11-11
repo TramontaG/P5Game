@@ -1,3 +1,3 @@
-import squareGameObject from './square';
-export const Square = squareGameObject;
+import rectGameObj from './Rectangle';
+export const Rectangle = rectGameObj;
 

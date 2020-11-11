@@ -1,7 +1,8 @@
 import GameObject from "./gameObject";
 import SquareChildren from './squareChildren'
 
-export default class Square extends GameObject {
+
+export default class Rectangle extends GameObject {
   constructor(options) {
     super(options);
     this.fillColor = options.fillColor || "rgb(255, 255, 255)";
@@ -13,6 +14,13 @@ export default class Square extends GameObject {
 		this.hasGravity = true;
     this.canThrow = true;
     this.hasRigidBody = true;
+    this.width = options.width;
+    this.height = options.height
+
+    this.collisionHandler = {
+      any: () => this.fillColor = `rgb(${Math.round(Math.random() * 255)}, ${Math.round(Math.random() * 255)}, ${Math.round(Math.random() * 255)})`,
+      canvas: () => this.fillColor = 255,
+    }
   }
 
   render() {
@@ -20,15 +28,6 @@ export default class Square extends GameObject {
     strokeWeight(this.borderThickness);
     fill(this.fillColor);
     rect(this.position.x, this.position.y, this.width, this.height);
-  }
-
-
-  update(){
-    if (this.mouseIsOver()){
-      this.fillColor = 'rgba(0,0,0,.5)';
-    } else {
-      this.fillColor = 'rgb(255,255,255)';
-    }
   }
 
 }
