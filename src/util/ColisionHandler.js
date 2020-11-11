@@ -73,9 +73,12 @@ export default class ColisionHandler {
             )
             if (source.position.y < target.position.y){
                 source.position.y += overlappingDistance * 1.2;
-                if (source.velocity.mag() < 0.35 && target.velocity.mag() < 0.35){
+                if (source.velocity.y < 0.35 && target.velocity.y < 0.35){
                     source.velocity.y = 0;
                     target.velocity.y = 0;
+                } else {
+                    if (source.collisionHandler.hasOwnProperty(target.tag)) source.collisionHandler[target.tag](target);
+                    if (source.collisionHandler.hasOwnProperty('any'))      source.collisionHandler.any(target);
                 }
             }
         }
