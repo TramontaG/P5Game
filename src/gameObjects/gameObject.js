@@ -15,7 +15,6 @@ export default class GameObject {
 
 		//movement related properties
 		this.position = options.position || new p5.Vector(0,0);
-		this._lastPos = this.position;
 		this.velocity = options.velocity || new p5.Vector(0,0);
 		this.accel = options.accel || new p5.Vector(0,0);
 		this.mass = options.mass || 1;
@@ -23,6 +22,7 @@ export default class GameObject {
 		this.canvasFriction = options.canvasFriction || 0;
 		this.bounceCoeficient = options.bounceCoeficient || 0;
 		this.airDrag = options.airDrag || 0;
+		this.static = false;
 
 		//environment interaction related properties
 		this.canDrag = options.canDrag || false;
@@ -126,7 +126,7 @@ export default class GameObject {
 	}
 
 	_move() {
-		if (this._dragging) return;
+		if (this._dragging || this.static) return;
 		this.velocity.add(this.accel);
 		this.position.add(this.velocity);
 		this.accel = new p5.Vector(0,0);

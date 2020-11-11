@@ -6,7 +6,7 @@ export default class ColisionHandler {
     static checkCollision(source, target){
        for (let sourceHitbox of source.hitboxes){
             for (let targetHitbox of target.hitboxes){
-                if (sourceHitbox instanceof Hitboxes.Square && targetHitbox instanceof Hitboxes.Square){
+                if (sourceHitbox instanceof Hitboxes.Square || targetHitbox instanceof Hitboxes.Square){
                     const sourceMargins = this.getSquareMargins(source, sourceHitbox);
                     const targetMargins = this.getSquareMargins(target, targetHitbox);
                     if (this.checkSquareCollision(sourceMargins, targetMargins)){
@@ -14,7 +14,9 @@ export default class ColisionHandler {
                         const angleDeg = (angle * 180) / Math.PI;
 
                         const verticalCollision = Math.floor((angleDeg - 45) / 90) % 2 == 0;
-                        this.preventSquareClipping(source, sourceHitbox, target, targetHitbox, verticalCollision);
+                        if (!source.static) {
+                            this.preventSquareClipping(source, sourceHitbox, target, targetHitbox, verticalCollision);
+                        }
                         Physics.collideSquareObjects(source, target, verticalCollision);
                     }
                 }
@@ -69,7 +71,13 @@ export default class ColisionHandler {
                 (target.position.y + targetHitbox.height / 2) -
                 (source.position.y - sourceHitbox.height / 2)                 
             )
-            source.position.y += overlappingDistance / 2;
+            if (source.position.y < target.position.y){
+                source.position.y += overlappingDistance * 1.2;
+                if (source.velocity.mag() < 0.35 && target.velocity.mag() < 0.35){
+                    source.velocity.y = 0;
+                    target.velocity.y = 0;
+                }
+            }
         }
     }
 }
